@@ -149,6 +149,16 @@ func main() {
 					Name:  "no-tmsp",
 					Usage: "Use a null, in-process app",
 				},
+				cli.StringFlag{
+					Name:  "tmcore-image",
+					Usage: "Docker image to use for tendermint core",
+					Value: "tendermint/tmbase",
+				},
+				cli.StringFlag{
+					Name:  "tmapp-image",
+					Usage: "Docker image to use for tendermint app",
+					Value: "tendermint/tmbase",
+				},
 				machFlag,
 			},
 			Action: func(c *cli.Context) {
