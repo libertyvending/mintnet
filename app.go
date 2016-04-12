@@ -119,6 +119,7 @@ func cmdStart(c *cli.Context) {
 		case err = <-errCh:
 			fmt.Println(Red(err.Error()))
 		case valConf := <-seedsCh:
+			fmt.Println("VALIDATOR", valConf.Index, valConf.Validator.ID, valConf.RPCAddr)
 			valConfs = append(valConfs, valConf)
 			seeds = append(seeds, valConf.P2PAddr)
 		}
@@ -326,9 +327,10 @@ func startTMCore(mach, app string, seeds []string, randomPort, noTMSP bool, imag
 				valConfig.Validator.PubKey = status.PubKey
 				break
 			}
-			if err != nil {
+			/*if err != nil {
 				return valConfig, fmt.Errorf("Error getting PubKey from mach %s on %s: %v", mach, valConfig.RPCAddr, err)
-			}
+			}*/
+			// if we can't get pubkey, wtf ?!
 
 			return valConfig, nil
 		}
