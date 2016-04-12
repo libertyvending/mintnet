@@ -67,7 +67,7 @@ func cmdStart(c *cli.Context) {
 	var wg sync.WaitGroup
 	seedsCh := make(chan *ValidatorConfig, len(machines))
 	errCh := make(chan error, len(machines))
-	for _, mach := range machines {
+	for _, machName := range machines {
 		wg.Add(1)
 		maybeSleep(len(machines), 2000)
 		go func(mach string) {
@@ -108,7 +108,7 @@ func cmdStart(c *cli.Context) {
 				return
 			}
 			seedsCh <- seed
-		}(mach)
+		}(machName)
 	}
 	wg.Wait()
 
@@ -316,9 +316,10 @@ func startTMCore(mach, app string, seeds []string, randomPort, noTMSP bool, imag
 			// try a few times in case the rpc server is slow to start
 			var result ctypes.TMResult
 			for i := 0; i < 10; i++ {
-				time.Sleep(time.Second)
-				c := client.NewClientURI(fmt.Sprintf("http://%s", valConfig.RPCAddr))
+				time.Sleep(time.Second * 2)
+				c := client.NewClientURI(valConfig.RPCAddr)
 				if _, err = c.Call("status", nil, &result); err != nil {
+					fmt.Println(Yellow(Fmt("Error getting rpc status for %v: %v", valConfig.RPCAddr, err)))
 					continue
 				}
 				status := result.(*ctypes.ResultStatus)
@@ -337,7 +338,7 @@ func startTMCore(mach, app string, seeds []string, randomPort, noTMSP bool, imag
 
 func dialSeeds(rpcAddr string, seeds []string) error {
 	var result ctypes.TMResult
-	c := client.NewClientURI(fmt.Sprintf("http://%s", rpcAddr))
+	c := client.NewClientURI(fmt.Sprintf("%s", rpcAddr))
 	args := map[string]interface{}{"seeds": seeds}
 	if _, err := c.Call("dial_seeds", args, &result); err != nil {
 		return errors.New("Error dialing seeds at rpc address " + rpcAddr)
