@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"strings"
+	"time"
 
 	. "github.com/tendermint/go-common"
 	pcm "github.com/tendermint/go-process"
@@ -129,4 +131,14 @@ func ReadJSONFile(o interface{}, filename string) error {
 		return err
 	}
 	return nil
+}
+
+//--------------------------------------------------------------------------------
+// for avoiding request limits in concurrent calls to amazonec2
+
+func maybeSleep(n int, t int) {
+	if n > 16 {
+		sleepMS := int(rand.Int31n(int32(t)))
+		time.Sleep(time.Millisecond * time.Duration(sleepMS))
+	}
 }

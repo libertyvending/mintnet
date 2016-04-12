@@ -45,6 +45,7 @@ func cmdStart(c *cli.Context) {
 	}
 	chainCfg.ID = app
 
+	startTime := time.Now()
 	// Get machine ips
 	seeds := make([]string, len(seedMachines))
 	for i, mach := range seedMachines {
@@ -68,12 +69,19 @@ func cmdStart(c *cli.Context) {
 	errCh := make(chan error, len(machines))
 	for _, mach := range machines {
 		wg.Add(1)
+		maybeSleep(len(machines), 2000)
 		go func(mach string) {
+			maybeSleep(len(machines), 5000)
+
 			defer wg.Done()
 			if err := startTMCommon(mach, app); err != nil {
 				errCh <- err
 				return
 			}
+
+			// attempt to avoid aws ec2 request limit errors
+			maybeSleep(len(machines), 5000)
+
 			if err := copyNodeDir(mach, app, base); err != nil {
 				errCh <- err
 				return
@@ -82,7 +90,6 @@ func cmdStart(c *cli.Context) {
 			// if noTMSP, we ignore socket and app containers
 			// and just use an in-process null app
 			if !noTMSP {
-				// XXX: this isn't even used!
 				if err := startTMData(mach, app); err != nil {
 					errCh <- err
 					return
@@ -93,6 +100,8 @@ func cmdStart(c *cli.Context) {
 				}
 			}
 
+			// attempt to avoid aws ec2 request limit errors
+			maybeSleep(len(machines), 5000)
 			seed, err := startTMCore(mach, app, seeds, randomPorts, noTMSP, tmcoreImage)
 			if err != nil {
 				errCh <- err
@@ -136,6 +145,7 @@ func cmdStart(c *cli.Context) {
 		for _, val := range valConfs {
 			wg.Add(1)
 			go func(rpcAddr string) {
+				maybeSleep(len(valConfs), 2000)
 				defer wg.Done()
 				if err := dialSeeds(rpcAddr, seeds); err != nil {
 					fmt.Println(Red(err.Error()))
@@ -145,7 +155,7 @@ func cmdStart(c *cli.Context) {
 		}
 		wg.Wait()
 	}
-	fmt.Println(Green("Done launching tendermint network for " + app))
+	fmt.Println(Green(Fmt("Done launching tendermint network for %v. Took %v", app, time.Since(startTime))))
 }
 
 func ReadBlockchainConfig(base string) (*BlockchainConfig, error) {
@@ -373,6 +383,7 @@ func cmdRestart(c *cli.Context) {
 	for _, mach := range machines {
 		wg.Add(1)
 		go func(mach string) {
+			maybeSleep(len(machines), 2000)
 			defer wg.Done()
 			restartTMApp(mach, app)
 			restartTMCore(mach, app)
@@ -412,6 +423,7 @@ func cmdStop(c *cli.Context) {
 	for _, mach := range machines {
 		wg.Add(1)
 		go func(mach string) {
+			maybeSleep(len(machines), 2000)
 			defer wg.Done()
 			stopTMCore(mach, app)
 			stopTMApp(mach, app)
@@ -461,6 +473,7 @@ func cmdRm(c *cli.Context) {
 		for _, mach := range machines {
 			wg.Add(1)
 			go func(mach string) {
+				maybeSleep(len(machines), 2000)
 				defer wg.Done()
 				stopTMData(mach, app)
 				stopTMCore(mach, app)
@@ -475,6 +488,7 @@ func cmdRm(c *cli.Context) {
 	for _, mach := range machines {
 		wg.Add(1)
 		go func(mach string) {
+			maybeSleep(len(machines), 2000)
 			defer wg.Done()
 			rmTMCommon(mach, app)
 			rmTMData(mach, app)

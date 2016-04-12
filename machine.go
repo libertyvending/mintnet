@@ -21,6 +21,7 @@ func cmdDocker(c *cli.Context) {
 	for _, mach := range machines {
 		wg.Add(1)
 		go func(mach string) {
+			maybeSleep(len(machines), 2000)
 			defer wg.Done()
 			dockerCmd(mach, args)
 		}(mach)
@@ -55,10 +56,11 @@ func createMachines(machines []string, args []string) (errs []error) {
 	for _, mach := range machines {
 		wg.Add(1)
 		go func(mach string) {
+			maybeSleep(len(machines), 2000)
 			defer wg.Done()
 			err := createMachine(args, mach)
 			if err != nil {
-				errs = append(errs, err)
+				errs = append(errs, err) // TODO: make thread safe
 			}
 		}(mach)
 	}
@@ -121,6 +123,7 @@ func provisionMachines(machines []string, args []string) (errs []error) {
 	for _, mach := range machines {
 		wg.Add(1)
 		go func(mach string) {
+			maybeSleep(len(machines), 2000)
 			defer wg.Done()
 			err := provisionMachine(args, mach)
 			if err != nil {
